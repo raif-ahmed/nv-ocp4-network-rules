@@ -1,0 +1,349 @@
+apiVersion: v1
+items:
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.httpd.sample1
+    namespace: sample1
+  spec:
+    dlp:
+      settings: []
+      status: true
+    egress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-egress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+    - action: allow
+      applications:
+      - DNS
+      name: nv.ip.dns-default.openshift-dns-egress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: address
+          op: =
+          value: 172.30.0.10
+        - key: domain
+          op: =
+          value: openshift-dns
+        - key: label
+          op: =
+          value: dns.operator.openshift.io/daemonset-dns=default
+        name: nv.ip.dns-default.openshift-dns
+        original_name: ""
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - any
+      name: nv.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: openshift-monitoring
+        - key: service
+          op: =
+          value: prometheus-k8s.openshift-monitoring
+        name: nv.prometheus-k8s.openshift-monitoring
+        original_name: ""
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.httpd.sample1-ingress-2
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria: []
+        name: external
+        original_name: ""
+    process:
+    - action: allow
+      allow_update: false
+      name: cat
+      path: /usr/bin/coreutils
+    - action: allow
+      allow_update: false
+      name: curl
+      path: '*'
+    - action: allow
+      allow_update: false
+      name: httpd
+      path: /usr/sbin/httpd
+    process_profile:
+      baseline: zero-drift
+    target:
+      policymode: Protect
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    waf:
+      settings: []
+      status: true
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.ip.httpd.sample1
+    namespace: sample1
+  spec:
+    egress: []
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-ingress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    - action: deny
+      applications:
+      - any
+      name: nv.ip.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: container
+          op: =
+          value: '*'
+        name: containers
+        original_name: ""
+    process: []
+    target:
+      policymode: N/A
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+kind: List
+metadata: null
+apiVersion: v1
+items:
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.httpd.sample1
+    namespace: sample1
+  spec:
+    dlp:
+      settings: []
+      status: true
+    egress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-egress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+    - action: allow
+      applications:
+      - DNS
+      name: nv.ip.dns-default.openshift-dns-egress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: address
+          op: =
+          value: 172.30.0.10
+        - key: domain
+          op: =
+          value: openshift-dns
+        - key: label
+          op: =
+          value: dns.operator.openshift.io/daemonset-dns=default
+        name: nv.ip.dns-default.openshift-dns
+        original_name: ""
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - any
+      ports: tcp/8080
+      name: nv.httpd.sample1-ingress-0
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: openshift-ingress
+        - key: service
+          op: =
+          value: router-default.openshift-ingress
+        name: nv.router-default.openshift-ingress
+        original_name: ""
+    - action: allow
+      applications:
+      - any
+      name: nv.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: openshift-monitoring
+        - key: service
+          op: =
+          value: prometheus-k8s.openshift-monitoring
+        name: nv.prometheus-k8s.openshift-monitoring
+        original_name: ""
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.httpd.sample1-ingress-2
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria: []
+        name: external
+        original_name: ""
+    process:
+    - action: allow
+      allow_update: false
+      name: cat
+      path: /usr/bin/coreutils
+    - action: allow
+      allow_update: false
+      name: curl
+      path: '*'
+    - action: allow
+      allow_update: false
+      name: httpd
+      path: /usr/sbin/httpd
+    process_profile:
+      baseline: zero-drift
+    target:
+      policymode: Protect
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    waf:
+      settings: []
+      status: true
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.ip.httpd.sample1
+    namespace: sample1
+  spec:
+    egress: []
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-ingress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    - action: deny
+      applications:
+      - any
+      name: nv.ip.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: container
+          op: =
+          value: '*'
+        name: containers
+        original_name: ""
+    process: []
+    target:
+      policymode: N/A
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+kind: List
+metadata: null
