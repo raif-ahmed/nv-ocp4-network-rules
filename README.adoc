@@ -1,4 +1,4 @@
-= Define NetworkPolicy for namespace
+= Define Multitenant isolation for namespace
 
 In this post we will examine using NeuVector Network rules to enable multi-tenancy isolation in openshift. Also how we can isolate external traffic from specific workload.
 
