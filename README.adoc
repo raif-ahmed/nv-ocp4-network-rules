@@ -1,0 +1,455 @@
+= Define NetworkPolicy for namespace
+
+In this post we will examine using NeuVector Network rules to enable multi-tenancy isolation in openshift. Also how we can isolate external traffic from specific workload.
+
+.References :
+** https://docs.openshift.com/container-platform/4.12/networking/network_policy/multitenant-network-policy.html[Configuring multitenant isolation with network policy]
+
+
+:sectnums:
+
+== Multitenant isolation
+In OCP 4 By default, all Pods and services in a project are accessible from other Pods in different namespaces. You can restrict this behavior either by using Networkploicies or use the multitenant isolation mode for the OpenShift SDN network.
+
+In this post we use NeuVector to achieves same results.
+
+===  Pod inter-communications
+To explain how Pod inter-communications lets try a simple sample
+
+[source,bash]
+----
+# ceate first sample application
+oc new-project sample1
+oc new-app httpd
+
+# ceate Second sample application
+oc new-project sample2
+oc new-app httpd
+
+# ceate Third sample application
+oc new-project sample3
+oc new-app httpd
+
+----
+
+Now lets try to play with curl to check communication accessibility
+
+[source,bash]
+----
+# From sample1 call sample2
+oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+# From sample1 call sample3
+oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample3.svc.cluster.local:8080
+
+# From sample2 call sample1
+oc exec -n sample2 $(oc get po -n sample2 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+# From sample2 call sample3
+oc exec -n sample2 $(oc get po -n sample2 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample3.svc.cluster.local:8080
+
+# From sample3 call sample1
+oc exec -n sample3 $(oc get po -n sample3 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+# From sample3 call sample2
+oc exec -n sample3 $(oc get po -n sample3 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample2.svc.cluster.local:8080
+
+----
+
+Then we will expose the apache HTTP server so it can be externally accessibility
+
+[source,bash]
+----
+oc expose svc/httpd  -n sample1
+oc expose svc/httpd  -n sample2
+oc expose svc/httpd  -n sample3
+
+curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
+
+curl "http://$(oc get route -n sample2 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
+
+curl "http://$(oc get route -n sample3 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
+----
+
+We so our tests so NeuVector can discover our access behavior and how traffic flow to the workload.
+
+== Configuring multitenant isolation using NeuVector
+
+First thing is to ensure that NV Network Security Policy Mode is Protect so it blocks any communication unless there is an explicit Network rule to enable it. You can do this through settings page.
+
+image::img/network_protect.jpg[]
+
+the following yaml will create multitenant isolation on namespace sample1, so pods within sample1 only are allowed to communicate, and also incoming communication from both ingress, external and monitoring.
+
+
+.NvSecurityRule.yaml
+[source, yaml]
+----
+apiVersion: v1
+items:
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.httpd.sample1
+    namespace: sample1
+  spec:
+    dlp:
+      settings: []
+      status: true
+    egress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-egress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+    - action: allow
+      applications:
+      - DNS
+      name: nv.ip.dns-default.openshift-dns-egress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: address
+          op: =
+          value: 172.30.0.10
+        - key: domain
+          op: =
+          value: openshift-dns
+        - key: label
+          op: =
+          value: dns.operator.openshift.io/daemonset-dns=default
+        name: nv.ip.dns-default.openshift-dns
+        original_name: ""
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - any
+      name: nv.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: openshift-monitoring
+        - key: service
+          op: =
+          value: prometheus-k8s.openshift-monitoring
+        name: nv.prometheus-k8s.openshift-monitoring
+        original_name: ""
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.httpd.sample1-ingress-2
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria: []
+        name: external
+        original_name: ""
+    process:
+    - action: allow
+      allow_update: false
+      name: cat
+      path: /usr/bin/coreutils
+    - action: allow
+      allow_update: false
+      name: curl
+      path: '*'
+    - action: allow
+      allow_update: false
+      name: httpd
+      path: /usr/sbin/httpd
+    process_profile:
+      baseline: zero-drift
+    target:
+      policymode: Protect
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    waf:
+      settings: []
+      status: true
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.ip.httpd.sample1
+    namespace: sample1
+  spec:
+    egress: []
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-ingress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    - action: deny
+      applications:
+      - any
+      name: nv.ip.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: container
+          op: =
+          value: '*'
+        name: containers
+        original_name: ""
+    process: []
+    target:
+      policymode: N/A
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+kind: List
+metadata: null
+apiVersion: v1
+items:
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.httpd.sample1
+    namespace: sample1
+  spec:
+    dlp:
+      settings: []
+      status: true
+    egress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-egress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+    - action: allow
+      applications:
+      - DNS
+      name: nv.ip.dns-default.openshift-dns-egress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: address
+          op: =
+          value: 172.30.0.10
+        - key: domain
+          op: =
+          value: openshift-dns
+        - key: label
+          op: =
+          value: dns.operator.openshift.io/daemonset-dns=default
+        name: nv.ip.dns-default.openshift-dns
+        original_name: ""
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - any
+      ports: tcp/8080
+      name: nv.httpd.sample1-ingress-0
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: openshift-ingress
+        - key: service
+          op: =
+          value: router-default.openshift-ingress
+        name: nv.router-default.openshift-ingress
+        original_name: ""
+    - action: allow
+      applications:
+      - any
+      name: nv.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: openshift-monitoring
+        - key: service
+          op: =
+          value: prometheus-k8s.openshift-monitoring
+        name: nv.prometheus-k8s.openshift-monitoring
+        original_name: ""
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.httpd.sample1-ingress-2
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria: []
+        name: external
+        original_name: ""
+    process:
+    - action: allow
+      allow_update: false
+      name: cat
+      path: /usr/bin/coreutils
+    - action: allow
+      allow_update: false
+      name: curl
+      path: '*'
+    - action: allow
+      allow_update: false
+      name: httpd
+      path: /usr/sbin/httpd
+    process_profile:
+      baseline: zero-drift
+    target:
+      policymode: Protect
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    waf:
+      settings: []
+      status: true
+- apiVersion: neuvector.com/v1
+  kind: NvSecurityRule
+  metadata:
+    name: nv.ip.httpd.sample1
+    namespace: sample1
+  spec:
+    egress: []
+    file: []
+    ingress:
+    - action: allow
+      applications:
+      - HTTP
+      name: nv.ip.httpd.sample1-ingress-0
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: service
+          op: =
+          value: httpd.sample1
+        name: nv.httpd.sample1
+        original_name: ""
+    - action: deny
+      applications:
+      - any
+      name: nv.ip.httpd.sample1-ingress-1
+      ports: any
+      priority: 0
+      selector:
+        comment: ""
+        criteria:
+        - key: container
+          op: =
+          value: '*'
+        name: containers
+        original_name: ""
+    process: []
+    target:
+      policymode: N/A
+      selector:
+        comment: ""
+        criteria:
+        - key: domain
+          op: =
+          value: sample1
+        - key: label
+          op: =
+          value: deployment=httpd
+        name: nv.ip.httpd.sample1
+        original_name: ""
+kind: List
+metadata: null
+----
+You can import the NvSecurityRule by using UI Policy>Group>Import Group Policy
+
+image::img/import_rule.jpg[]
+
+Now lets try again previous curl to check communication accessibility
+
+[source,bash]
+----
+# From sample2 call sample1 -- It should fail
+oc exec -n sample2 $(oc get po -n sample2 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+
+# From sample3 call sample1 -- It should fail
+oc exec -n sample3 $(oc get po -n sample3 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+
+
+# From sample1 call sample1 -- It should succeeded
+oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
+
+# Now test from ingress as it should successes 
+curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
+----
