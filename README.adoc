@@ -77,11 +77,15 @@ First thing is to ensure that NV Network Security Policy Mode is Protect so it b
 
 image::img/network_protect.jpg[]
 
+IMPORTANT: Once you enable Network Security Policy Mode as Protect, all cluster communication will be blocked unless explicitly enabled.  
+
 The link:NvSecurityRule-multitenant-allow-external.yaml[NvSecurityRule-multitenant-allow-external] will create multitenant isolation on namespace sample1, so pods within sample1 only are allowed to communicate, and also incoming communication from both ingress, external and monitoring.
 
 You can import the NvSecurityRule by using UI Policy>Group>Import Group Policy
 
 image::img/import_rule.jpg[]
+
+for more information please refer to https://open-docs.neuvector.com/policy/usingcrd/import
 
 Now lets try again previous curl to check communication accessibility
 
