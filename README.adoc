@@ -71,7 +71,7 @@ curl "http://$(oc get route -n sample3 -l  app.kubernetes.io/component=httpd  -o
 
 We so our tests so NeuVector can discover our access behavior and how traffic flow to the workload.
 
-== Configuring multitenant isolation using NeuVector
+== Configuring multitenant isolation using NeuVector Network rules
 
 First thing is to ensure that NV Network Security Policy Mode is Protect so it blocks any communication unless there is an explicit Network rule to enable it. You can do this through settings page.
 
@@ -97,6 +97,22 @@ oc exec -n sample3 $(oc get po -n sample3 -l deployment=httpd -o name) -- curl -
 # From sample1 call sample1 -- It should succeeded
 oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
 
+# Now test from ingress as it should successes 
+curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
+----
+
+== Disallow external communication using NeuVector Network rules
+
+The link:NvSecurityRule-multitenant-disallow-external.yaml[NvSecurityRule-multitenant-disallow-external] will also disallow incoming communication from external through the exposed route.
+
+You can import the NvSecurityRule by using UI Policy>Group>Import Group Policy
+
+image::img/import_rule.jpg[]
+
+Now lets try again previous curl to check communication accessibility
+
+[source,bash]
+----
 # Now test from ingress as it should successes 
 curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
 ----
