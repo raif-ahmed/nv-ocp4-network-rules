@@ -121,6 +121,6 @@ Now lets try again previous curl to check communication accessibility
 
 [source,bash]
 ----
-# Now test from ingress as it should successes 
+# Now test from ingress as it should fail 
 curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
 ----
