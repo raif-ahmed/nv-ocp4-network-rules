@@ -2,6 +2,7 @@
 
 In this post we will examine using NeuVector Network rules to enable multi-tenancy isolation in openshift. Also how we can isolate external traffic from specific workload.
 
+
 .References :
 ** https://docs.openshift.com/container-platform/4.12/networking/network_policy/multitenant-network-policy.html[Configuring multitenant isolation with network policy]
 ** https://open-docs.neuvector.com/[NeuVector Docs]
@@ -11,6 +12,9 @@ In this post we will examine using NeuVector Network rules to enable multi-tenan
 
 == Multitenant isolation
 In OCP 4 By default, all Pods and services in a project are accessible from other Pods in different namespaces. You can restrict this behavior either by using Networkploicies or use the multitenant isolation mode for the OpenShift SDN network.
+
+
+Blocking connections from a namespace to another it is good but with NeuVector we can go further and block any connection that is not meant to happen, per pod, not just per namespace, with multitenancy if a pod in your namespace goes rogue it can impact other pods in the same namespace and we don't want that, with zero-trust we want each pod to be able to connect only to what it should and nothing else... creating zero-trust policies is easy with the discover mode... but in case you still want to limit by namespace this is how you can do it.
 
 In this post we use NeuVector to achieves same results.
 
