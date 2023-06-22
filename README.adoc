@@ -1,11 +1,12 @@
 = Define Multitenant isolation for namespace
 
-In this post we will examine using NeuVector Network rules to enable multi-tenancy isolation in openshift. Also how we can isolate external traffic from specific workload.
+In this post we will examine using NeuVector Network rules to enable multi-tenancy isolation in openshift. Also how we can isolate external ingress & egress traffic from specific workload.
 
 
 .References :
 ** https://docs.openshift.com/container-platform/4.12/networking/network_policy/multitenant-network-policy.html[Configuring multitenant isolation with network policy]
 ** https://open-docs.neuvector.com/[NeuVector Docs]
+https://docs.openshift.com/container-platform/4.13/networking/openshift_sdn/configuring-egress-firewall.html[Configuring an egress firewall for a project]
 
 
 :sectnums:
@@ -109,7 +110,7 @@ oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl -
 curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
 ----
 
-== Disallow external communication using NeuVector Network rules
+== Disallow external ingress communication using NeuVector Network rules
 
 The link:NvSecurityRule-multitenant-disallow-external.yaml[NvSecurityRule-multitenant-disallow-external] will also disallow incoming communication from external through the exposed route.
 
@@ -124,3 +125,24 @@ Now lets try again previous curl to check communication accessibility
 # Now test from ingress as it should fail 
 curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
 ----
+
+== Disallow external egress communication using NeuVector Network rules
+
+In OpenShift, there are two Container Network Interface (CNI) OVN-Kubernetes & OpenShift SDN.
+OpenShift SDN CNI till 4.9 was not supporting Network policy egress as specified by the egress field, for more info please refer to https://docs.openshift.com/container-platform/4.9/networking/network_policy/about-network-policy.html#nw-networkpolicy-about_about-network-policy[About network policy]
+
+Both CNIs have an Egress firewall feature, for OVN-Kubernetes it is called EgressFirewall, for more information please refer to https://docs.openshift.com/container-platform/4.13/networking/ovn_kubernetes_network_provider/configuring-egress-firewall-ovn.html[Configuring an egress firewall for a project], and for OpenShift SDN it is called EgressNetworkPolicy https://docs.openshift.com/container-platform/4.13/networking/openshift_sdn/configuring-egress-firewall.html[Configuring an egress firewall for a project].
+
+
+The nice thing about EgressFirewall or EgressNetworkPolicy is that they can limit communication based on DNS record (dnsName) unlike Network policy which is based on ipBlock or pod selectors and/or namespace selectors. so it become handy in blocking connection to external internet DNS, for more info. please refer to https://kubernetes.io/docs/concepts/services-networking/network-policies/#behavior-of-to-and-from-selectors[Behavior of to and from selectors]
+
+But there are also limitations in this egress control, which in OpenShift you can create one egress control policy (EgressFirewall or EgressNetworkPolicy) per namespace, https://docs.openshift.com/container-platform/4.13/networking/ovn_kubernetes_network_provider/configuring-egress-firewall-ovn.html#limitations-of-an-egress-firewall_configuring-egress-firewall-ovn[OVN Kubernetes Limitations of an egress firewall] & https://docs.openshift.com/container-platform/4.13/networking/openshift_sdn/configuring-egress-firewall.html#limitations-of-an-egress-firewall_openshift-sdn-egress-firewall[openshift SDN Limitations of an egress firewall]
+
+also other limitations include;
+* Namespace only, no pod selectors to further refine egress controls
+* No application protocol verification (e.g. mysql, …) to further secure connections by layer7 application protocol (this also is a limitation in network policy)
+* Limited rule management, where the order of definition in the yaml file is the method and can’t be compared to other global rules
+
+
+
+
