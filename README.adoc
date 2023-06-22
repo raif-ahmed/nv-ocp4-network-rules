@@ -144,5 +144,21 @@ also other limitations include;
 * Limited rule management, where the order of definition in the yaml file is the method and can’t be compared to other global rules
 
 
+The link:NvSecurityRule-multitenant-disallow-external.yaml[NvSecurityRule-multitenant-disallow-external] will also disallow incoming communication from external through the exposed route.
 
+You can import the NvSecurityRule by using UI Policy>Group>Import Group Policy
+
+image::img/import_rule.jpg[]
+
+Now lets try again previous curl to check communication accessibility
+
+[source,bash]
+----
+
+# From sample1 call google.com -- it should fail 
+oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl --max-time 2 https://google.com
+
+# From sample1 call suse.com -- it should succeed 
+oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl --max-time 2 https://suse.com
+----
 
