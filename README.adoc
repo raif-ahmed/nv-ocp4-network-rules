@@ -90,7 +90,14 @@ You can import the NvSecurityRule by using UI Policy>Group>Import Group Policy
 
 image::img/import_rule.jpg[]
 
-for more information please refer to https://open-docs.neuvector.com/policy/usingcrd/import
+or using the CRD objects, for more information please refer to https://open-docs.neuvector.com/policy/usingcrd/import
+
+so let's use the CRD object 
+
+[source,bash]
+----
+oc apply -f NvSecurityRule-multitenant-allow-external.yaml
+----
 
 Now lets try again previous curl to check communication accessibility
 
@@ -106,7 +113,7 @@ oc exec -n sample3 $(oc get po -n sample3 -l deployment=httpd -o name) -- curl -
 # From sample1 call sample1 -- It should succeeded
 oc exec -n sample1 $(oc get po -n sample1 -l deployment=httpd -o name) -- curl --max-time 2 http://httpd.sample1.svc.cluster.local:8080
 
-# Now test from ingress as it should successes 
+# Now test from ingress -- It should succeeded
 curl "http://$(oc get route -n sample1 -l  app.kubernetes.io/component=httpd  -o go-template='{{range .items}}{{.spec.host}}{{end}}')" 
 ----
 
@@ -118,7 +125,14 @@ You can import the NvSecurityRule by using UI Policy>Group>Import Group Policy
 
 image::img/import_rule.jpg[]
 
-Now lets try again previous curl to check communication accessibility
+or using the CRD objects, for more information please refer to https://open-docs.neuvector.com/policy/usingcrd/import
+
+so let's use the CRD object 
+
+[source,bash]
+----
+oc apply -f NvSecurityRule-multitenant-disallow-external.yaml
+----
 
 [source,bash]
 ----
