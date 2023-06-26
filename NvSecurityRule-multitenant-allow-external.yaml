@@ -99,7 +99,7 @@ items:
         original_name: ""
     process: []
     target:
-      policymode: Protect
+      policymode: N/A
       selector:
         comment: ""
         criteria:
