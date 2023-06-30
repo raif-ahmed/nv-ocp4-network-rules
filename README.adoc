@@ -86,6 +86,14 @@ IMPORTANT: Once you enable Network Security Policy Mode as Protect, all cluster 
 
 The link:NvSecurityRule-multitenant-allow-external.yaml[NvSecurityRule-multitenant-allow-external] will create multitenant isolation on namespace sample1, so pods within sample1 only are allowed to communicate, and also incoming communication from both ingress, external and monitoring.
 
+The idea is very simple, we created a group called custom-rules-sample1 whose criteria is “domain=sample1”, this group includes all the PODs and service IPs that nv.xxx & nv.ip.xxx includes
+
+* create policy from custom-rules-sample1 to custom-rules-sample1 action allow application any ports any
+* create policy from monitoring to custom-rules-sample1 action allow application any ports any
+* create policy from ingress-route to custom-rules-sample1 action allow application any ports any
+* create policy from external to custom-rules-sample1 action allow application any ports any
+* create policy from containers to custom-rules-sample1 action deny application any ports any
+
 You can import the NvSecurityRule by using UI Policy>Group>Import Group Policy
 
 image::img/import_rule.jpg[]
