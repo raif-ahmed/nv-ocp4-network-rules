@@ -164,7 +164,7 @@ now we can also check the internals of NV to see how rule have been created
 [source,bash]
 ----
 oc rsh -n neuvector $(oc get po -o name -l app=neuvector-manager-pod -n neuvector) cli
-#neuvector-svc-controller.neuvector> login --username admin --password xxx
+#neuvector-svc-controller.neuvector> login --username admin --password <use_ur_admin_password>>
 admin#neuvector-svc-controller.neuvector> show container -c httpd -b
 +--------------+---------------------------------------------------------------------------------+---------------+----------+
 | id           | name                                                                            | service       | state    |
