@@ -91,7 +91,7 @@ image::img/network_discover_7.jpg[]
 +
 image::img/network_discover_8.jpg[]
 
-As we didn't use much, our nginx server so NV didn't discover much of network rules.
+As we didn't use our nginx server much, so NV didn't discover much of network rules.
 
 
 [[nv_groups]]
