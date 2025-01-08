@@ -253,10 +253,7 @@ or to specifically select your target groups
 image::img/network_protect_1.jpg[]
 image::img/network_protect_2.jpg[]
 
-*Now what we want to do*; we want to create a set of rules that are applied to all of our httpd containers, For this reason we will create a new custom group which selects all our httpd container. 
+*Now what we want to do*; we want to create a set of rules using the UI to allow one way communication from one container to another.
 
-As we are testing so we will delete all Network rules discovered so far and create everything from scratch. After you delete the rules, don't forget to save.
-
-image::img/network_rules_1.jpg[]
 
 
