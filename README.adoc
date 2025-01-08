@@ -58,7 +58,7 @@ spec:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: 'system:openshift:scc:anyuid'
+  name: dummy-rb
   namespace: dummy
 subjects:
   - kind: ServiceAccount
@@ -80,7 +80,7 @@ image::img/network_discover_6.jpg[]
 after this we will expose a service for the deployment 
 [source,bash]
 ----
-oc expose deploy/nginx --name=nginx-deployment
+oc expose deploy/nginx --name=nginx-deployment -n dummy
 ----
 
 NV discovered another group
